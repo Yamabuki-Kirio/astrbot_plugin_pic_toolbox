@@ -9,7 +9,9 @@
 > 本仓库由 [Yamabuki-Kirio](https://github.com/Yamabuki-Kirio) 基于
 > [lirundong093-glitch/astrbot_plugin_pic_toolbox](https://github.com/lirundong093-glitch/astrbot_plugin_pic_toolbox)
 > 进行二次开发，保留 AGPL-3.0 许可。当前版本重点补充艺术特效、AstrBot 4.29.1
-> 本地图片路径兼容和重复响应防护；仅作为个人维护版本，不发布到 AstrBot 插件市场。
+> 本地图片路径兼容和重复响应防护。部分指令名称、触发优先级和处理效果根据个人实际
+> 使用习惯进行了调整；这是公开的个人维护版本，不代表上游官方版本，也不发布到
+> AstrBot 插件市场。
 
 基于 AstrBot 框架的群聊图片 / 头像处理插件，支持静态图和 GIF 的反色、翻转、旋转、镜像对称、调速、万花筒等艺术特效，以及摸头杀、发射、撅人、鞭笞、砍头等一系列趣味表情包生成。所有 GIF 处理统一使用增量帧展开管道，保留原图时长、透明度与循环信息。
 
