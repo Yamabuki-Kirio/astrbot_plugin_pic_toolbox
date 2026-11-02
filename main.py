@@ -15,7 +15,8 @@ from astrbot.api.star import Context, Star
 from pathlib import Path
 from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 
-from .meme import gif_speed, invert, flip, petpet, mirror, shoot, do, lash, behead, rotate
+from .meme import gif_speed, invert, flip, petpet, mirror, shoot, do, lash, behead, rotate, effects
+from .meme.input_source import acquire_image
 
 QQ_AVATAR_URL = "http://q1.qlogo.cn/g?b=qq&nk={qq}&s=640"
 TMP_DIR = Path(get_astrbot_data_path()) / "plugin_data" / "pic_toolbox"
@@ -23,16 +24,12 @@ os.makedirs(TMP_DIR, exist_ok=True)
 
 # ── 工具函数 ────────────────────────────────────
 
-def _download_sync(url: str, path: str) -> bool:
-    import requests
+def _download_sync(source: str, path: str) -> bool:
     try:
-        r = requests.get(url, timeout=30, headers={"User-Agent": "AstrBot/pic_toolbox"})
-        r.raise_for_status()
-        with open(path, "wb") as f:
-            f.write(r.content)
+        acquire_image(source, path)
         return True
     except Exception as e:
-        logger.error(f"[pic_toolbox] 下载失败: {e}")
+        logger.error(f"[pic_toolbox] 读取图片失败: {e}")
         return False
 
 def _is_gif(path: str) -> bool:
@@ -57,7 +54,7 @@ class PicToolboxPlugin(Star):
         self._cleanup_stale_tempfiles()
 
     # ── 参照 pic_mirror 的指令解析 ─────────────
-    @filter.event_message_type(EventMessageType.ALL)
+    @filter.event_message_type(EventMessageType.ALL, priority=10000)
     async def handle_all_commands(self, event: AstrMessageEvent):
         """手动解析 @用户 指令 或 指令 @用户，避免 / 前缀和 @ 标记冲突。"""
         msg = event.message_str.strip()
@@ -76,6 +73,31 @@ class PicToolboxPlugin(Star):
 
         # 去掉可能的前导 /
         cmd_text = actual_cmd.lstrip("/").strip()
+
+        # ── 艺术特效 ──────────────────────────
+        effect_commands = {
+            "万花筒": effects.kaleidoscope,
+            "像素化": effects.pixelate,
+            "浮雕": effects.emboss,
+            "油画": effects.oil_paint,
+            "故障风": effects.glitch,
+        }
+        if cmd_text in effect_commands:
+            if not self._match_mode and not actual_cmd.startswith("/"):
+                return
+            image_url = None
+            if at_qq and self._enable_at_avatar:
+                image_url = QQ_AVATAR_URL.format(qq=at_qq)
+            if not image_url:
+                image_url = self._extract_image_url(event)
+            if not image_url:
+                return
+            event.stop_event()
+            async for r in self._download_and_process(
+                event, image_url, effect_commands[cmd_text], cmd_text
+            ):
+                yield r
+            return
 
         # ── 反色 ────────────────────────────
         if cmd_text == "反色":
@@ -366,7 +388,7 @@ class PicToolboxPlugin(Star):
                 os.remove(input_path)
             except OSError:
                 pass
-            yield event.plain_result("图片下载失败，请稍后重试。")
+            yield event.plain_result("图片读取失败，请重新发送或稍后重试。")
             return
 
         ext = ".gif" if _is_gif(input_path) else ".png"

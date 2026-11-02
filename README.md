@@ -6,10 +6,15 @@
 
 # 🖼️ 图片处理工具箱 (astrbot_plugin_pic_toolbox)
 
-基于 AstrBot 框架的群聊图片 / 头像处理插件，支持静态图和 GIF 的反色、翻转、旋转、镜像对称、调速，以及摸头杀、发射、撅人、鞭笞、砍头等一系列趣味表情包生成。所有 GIF 处理统一使用增量帧展开管道，保留原图时长、透明度与循环信息。
+> 本仓库由 [Yamabuki-Kirio](https://github.com/Yamabuki-Kirio) 基于
+> [lirundong093-glitch/astrbot_plugin_pic_toolbox](https://github.com/lirundong093-glitch/astrbot_plugin_pic_toolbox)
+> 进行二次开发，保留 AGPL-3.0 许可。当前版本重点补充艺术特效、AstrBot 4.29.1
+> 本地图片路径兼容和重复响应防护；仅作为个人维护版本，不发布到 AstrBot 插件市场。
+
+基于 AstrBot 框架的群聊图片 / 头像处理插件，支持静态图和 GIF 的反色、翻转、旋转、镜像对称、调速、万花筒等艺术特效，以及摸头杀、发射、撅人、鞭笞、砍头等一系列趣味表情包生成。所有 GIF 处理统一使用增量帧展开管道，保留原图时长、透明度与循环信息。
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.2.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.1-blue" alt="Version">
   <img src="https://img.shields.io/badge/Python-3.8%2B-blue" alt="Python">
   <img src="https://img.shields.io/badge/AstrBot-%E6%8F%92%E4%BB%B6%E6%A1%86%E6%9E%B6-brightgreen" alt="AstrBot">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
@@ -18,6 +23,14 @@
 ---
 
 ## ✨ 功能一览
+
+### 本分支新增
+
+- 万花筒、像素化、浮雕、油画、故障风五种静态图/GIF 特效
+- 万花筒采用 meme-generator-rs 的同心圆错位布局等价移植版本
+- 支持 AstrBot 返回的本地绝对路径、`file://` URI 与 HTTP(S) 图片
+- 图片指令优先命中并停止继续传播，避免多个图片插件重复回复
+- 增加静态图、GIF 和本地图片来源自动化测试
 
 ### 🔧 变换类
 
@@ -41,6 +54,18 @@
 
 ### 🎭 表情包 / 特效类
 
+| 指令 | 说明 | 图片来源 |
+| :--- | :--- | :--- |
+| `万花筒` | 生成 10 层同心圆、逐层错位排列的 1200×1200 万花筒效果 | 引用 / 直接 / `@用户` |
+| `像素化` | 生成复古马赛克像素效果 | 同上 |
+| `浮雕` | 生成带透明度保留的浮雕效果 | 同上 |
+| `油画` | 生成色彩增强的油画笔触效果 | 同上 |
+| `故障风` | 生成 RGB 色差与横向错位效果 | 同上 |
+
+以上艺术特效均支持静态图和 GIF；默认使用 `/万花筒` 等形式，开启 `match_mode` 后可省略 `/`。
+
+### 🎭 趣味表情包
+
 | 指令 | 说明 | 类型 | 图片来源 |
 | :--- | :--- | :--- | :--- |
 | `摸头` | 生成 Petpet 摸头杀 GIF | 单人头 | 引用 / 直接 / `@用户` |
@@ -54,6 +79,8 @@
 ### 通用特性
 
 - **图片来源**：按优先级依次尝试 ①引用回复中的图片 ②直接发送的图片 ③ `@用户` 的 QQ 头像（需开启 `enable_at_avatar`）
+- **本地路径兼容**：支持 AstrBot 4.29.1 图片组件返回的本地绝对路径和 `file://` URI
+- **重复响应防护**：图片指令优先处理并在命中后停止传播，避免其他图片插件再次响应同一指令
 - **GIF 支持**：所有变换类指令均正确处理 GIF 增量帧，保留时长、透明度与循环信息
 - **精准匹配**：`match_mode` 开启后可直接发送词语触发，无需 `/` 前缀，参考了插件[astrbot-plugin-pic-mirror](https://github.com/FenChen0211/astrbot-plugin-pic-mirror)
 - **自动清理**：启动时清理超过 1 小时的残留临时文件，处理后 10 秒自动删除输出文件
@@ -186,6 +213,7 @@ astrbot_plugin_pic_toolbox/
 │   ├── invert.py        # 反色处理
 │   ├── flip.py          # 水平 / 垂直翻转
 │   ├── rotate.py        # 顺时针 / 逆时针 90° 旋转
+│   ├── effects.py       # 万花筒 / 像素化 / 浮雕 / 油画 / 故障风
 │   ├── mirror.py        # 左 / 右 / 上 / 下对称
 │   ├── gif_speed.py     # GIF 调速
 │   ├── petpet.py        # 摸头杀生成器
