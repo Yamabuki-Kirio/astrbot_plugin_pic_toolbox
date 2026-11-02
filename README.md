@@ -1,264 +1,112 @@
-<div align="center">
-
-[![Moe Counter](https://count.getloli.com/get/@lirundong093-glitch?theme=moebooru)](https://github.com/lirundong093-glitch/astrbot_plugin_pic_toolbox)
-
-</div>
-
-# 🖼️ 图片处理工具箱 (astrbot_plugin_pic_toolbox)
+# 图片处理工具箱（个人维护版）
 
 > 本仓库由 [Yamabuki-Kirio](https://github.com/Yamabuki-Kirio) 基于
 > [lirundong093-glitch/astrbot_plugin_pic_toolbox](https://github.com/lirundong093-glitch/astrbot_plugin_pic_toolbox)
-> 进行二次开发，保留 AGPL-3.0 许可。当前版本重点补充艺术特效、AstrBot 4.29.1
-> 本地图片路径兼容和重复响应防护。部分指令名称、触发优先级和处理效果根据个人实际
-> 使用习惯进行了调整；这是公开的个人维护版本，不代表上游官方版本，也不发布到
-> AstrBot 插件市场。
+> 二次开发，遵循 AGPL-3.0 许可证。这是根据个人实际使用需求维护的公开版本，
+> 不代表上游官方版本，也不发布到 AstrBot 插件市场。
 
-基于 AstrBot 框架的群聊图片 / 头像处理插件，支持静态图和 GIF 的反色、翻转、旋转、镜像对称、调速、万花筒等艺术特效，以及摸头杀、发射、撅人、鞭笞、砍头等一系列趣味表情包生成。所有 GIF 处理统一使用增量帧展开管道，保留原图时长、透明度与循环信息。
+## 与上游版本的区别
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.1-blue" alt="Version">
-  <img src="https://img.shields.io/badge/Python-3.8%2B-blue" alt="Python">
-  <img src="https://img.shields.io/badge/AstrBot-%E6%8F%92%E4%BB%B6%E6%A1%86%E6%9E%B6-brightgreen" alt="AstrBot">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
-</p>
+本维护版在上游图片处理能力基础上进行了以下调整：
 
----
+- 新增 `万花筒`、`像素化`、`浮雕`、`油画`、`故障风` 五种效果。
+- 万花筒采用 meme-generator-rs 的同心圆错位布局，输出 1200×1200 图片。
+- 支持 AstrBot 4.29.1 返回的本地绝对路径和 `file://` 图片地址。
+- 修复引用 GIF 被当作 HTTP URL 下载而处理失败的问题。
+- 提高本插件图片指令的处理优先级，命中后停止事件传播，避免其他图片插件重复回复。
+- 增加静态图、GIF、本地路径和 `file://` 输入的自动化测试。
+- 插件版本更新为 `v1.3.1`。
 
-## ✨ 功能一览
-
-### 本分支新增
-
-- 万花筒、像素化、浮雕、油画、故障风五种静态图/GIF 特效
-- 万花筒采用 meme-generator-rs 的同心圆错位布局等价移植版本
-- 支持 AstrBot 返回的本地绝对路径、`file://` URI 与 HTTP(S) 图片
-- 图片指令优先命中并停止继续传播，避免多个图片插件重复回复
-- 增加静态图、GIF 和本地图片来源自动化测试
-
-### 🔧 变换类
-
-| 指令 | 说明 | 图片来源 |
-| :--- | :--- | :--- |
-| `反色` | 对图片 / GIF 执行反色处理 | 引用回复图片 / 直接发送图片 / `@用户`取头像 |
-| `顺时针` | 顺时针旋转 90° | 同上 |
-| `逆时针` | 逆时针旋转 90° | 同上 |
-| `左右翻转` | 水平镜像翻转 | 同上 |
-| `上下翻转` | 垂直颠倒翻转 | 同上 |
-| `调速 0.3~5.0` | 调整 GIF 播放速度（如 `调速 2.0` 即两倍速）。GIF 上限 50 FPS，超限时自动回退到最接近上限的倍率并提示用户；开启 `gif_speed_allow_frame_drop` 后则通过均匀丢帧实现目标倍率 | 引用回复图片 / 直接发送图片 |
-
-### 🔄 对称类
-
-| 指令 | 说明 | 图片来源 |
-| :--- | :--- | :--- |
-| `左对称` | 保留左半边 → 镜像到右边 | 引用 / 直接 / `@用户` |
-| `右对称` | 保留右半边 → 镜像到左边 | 同上 |
-| `上对称` | 保留上半边 → 镜像到下边 | 同上 |
-| `下对称` | 保留下半边 → 镜像到上边 | 同上 |
-
-### 🎭 表情包 / 特效类
-
-| 指令 | 说明 | 图片来源 |
-| :--- | :--- | :--- |
-| `万花筒` | 生成 10 层同心圆、逐层错位排列的 1200×1200 万花筒效果 | 引用 / 直接 / `@用户` |
-| `像素化` | 生成复古马赛克像素效果 | 同上 |
-| `浮雕` | 生成带透明度保留的浮雕效果 | 同上 |
-| `油画` | 生成色彩增强的油画笔触效果 | 同上 |
-| `故障风` | 生成 RGB 色差与横向错位效果 | 同上 |
-
-以上艺术特效均支持静态图和 GIF；默认使用 `/万花筒` 等形式，开启 `match_mode` 后可省略 `/`。
-
-### 🎭 趣味表情包
-
-| 指令 | 说明 | 类型 | 图片来源 |
-| :--- | :--- | :--- | :--- |
-| `摸头` | 生成 Petpet 摸头杀 GIF | 单人头 | 引用 / 直接 / `@用户` |
-| `发射` | 生成射击表情包（含人脸检测自动定位） | 单人头 | 引用 / 直接 / `@用户` |
-| `杀` | 生成砍头表情包 GIF | 单人头 | 必须 `@用户` |
-| `操你` | 生成撅人表情包（双人互动） | 双人头 | 必须 `@用户` |
-| `抽你` | 生成鞭笞表情包（双人互动） | 双人头 | 必须 `@用户` |
-
-> **双人头指令说明**：`操你` 和 `抽你` 需要同时获取指令发送者与被 @ 者的头像，因此 **必须 @一个目标用户**，否则会提示「请 @ 一个目标！」。
-
-### 通用特性
-
-- **图片来源**：按优先级依次尝试 ①引用回复中的图片 ②直接发送的图片 ③ `@用户` 的 QQ 头像（需开启 `enable_at_avatar`）
-- **本地路径兼容**：支持 AstrBot 4.29.1 图片组件返回的本地绝对路径和 `file://` URI
-- **重复响应防护**：图片指令优先处理并在命中后停止传播，避免其他图片插件再次响应同一指令
-- **GIF 支持**：所有变换类指令均正确处理 GIF 增量帧，保留时长、透明度与循环信息
-- **精准匹配**：`match_mode` 开启后可直接发送词语触发，无需 `/` 前缀，参考了插件[astrbot-plugin-pic-mirror](https://github.com/FenChen0211/astrbot-plugin-pic-mirror)
-- **自动清理**：启动时清理超过 1 小时的残留临时文件，处理后 10 秒自动删除输出文件
-
----
-
-## 🛠️ 配置项
-
-| 配置 | 类型 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `enable_at_avatar` | bool | `true` | 允许 `@用户 + 指令` 获取对方头像处理 |
-| `match_mode` | bool | `false` | 开启后直接发「反色」即可触发，无需 `/` 前缀 |
-| `gif_speed_allow_frame_drop` | bool | `false` | 调速超 50 FPS 时允许均匀丢帧实现目标倍率（默认关闭，自动回退） |
-
----
-
-## ⚡ GIF 调速详解
-
-`调速` 指令支持 0.3× ~ 5.0× 变速。GIF 调速遵循 **最高 50 FPS** 的硬上限（对应每帧最短 20ms），超出上限时有两种策略：
-
-### 默认策略：自动取最接近上限倍率（推荐）
-
-当请求倍率导致帧率超过 50 FPS 时，插件会自动计算一个 **不超过 50 FPS 的最高合法倍率**（保留一位小数），并回退到该倍率执行。
-
-> 例如：原 GIF 为 30 FPS，请求 ×2.0 → 目标 60 FPS 超出上限，自动回退至 ×1.6 → 约 48 FPS，并提示用户实际使用的倍率。
-
-### 丢帧模式：`gif_speed_allow_frame_drop`
-
-开启此配置后，调速不再回退倍率，而是通过 **均匀丢帧** 保证每帧间隔不低于 20ms，从而在遵守 50 FPS 上限的同时实现目标倍率。
-
-> 例如：30 帧 GIF，请求 ×5.0，插件计算需要保留的帧数后每隔若干帧取一帧，确保最终帧率在 50 FPS 以内并提示丢帧信息。
-
-| 策略 | 效果 | 流畅度 | 适用场景 |
-| :--- | :--- | :--- | :--- |
-| 自动回退（默认） | 保留全部帧，倍率自动下调 | 流畅 | 日常调速 |
-| 允许丢帧 | 达到目标倍率，帧数减少 | 有跳帧感 | 追求极致加速 |
-
----
-
-## 📦 安装与依赖
-
-### 1. 安装插件
-
-将本插件目录放入 AstrBot 的插件目录，或通过 AstrBot 管理面板上传安装。
-
-```bash
-# 方式一：软链接
-ln -s /path/to/astrbot_plugin_pic_toolbox /path/to/astrbot/addons/plugins/
-
-# 方式二：直接放入
-cp -r astrbot_plugin_pic_toolbox /path/to/astrbot/addons/plugins/
-```
-
-### 2. 安装依赖
-
-```bash
-pip install Pillow>=10.0.0 requests>=2.25.0
-```
-
-**可选依赖**（`发射` 指令需要人脸检测功能）：
-
-```bash
-# 二选一
-pip install opencv-python      # GUI 完整版
-pip install opencv-python-headless  # 无头版（推荐服务器使用）
-
-# opencv-python 会自动安装 numpy，无需单独安装
-```
-
-> 如果不安装 opencv-python，`发射` 指令将不可用，其他功能不受影响。
-
----
-
-## 🖼️ 使用示例
+## 功能与指令
 
 ### 基础变换
 
-```
-用户：（发送一张图片）
-用户：反色
-Bot：  [返回反色后的图片]
+| 指令 | 效果 |
+| --- | --- |
+| `/反色` | 图片或 GIF 反色 |
+| `/顺时针` | 顺时针旋转 90° |
+| `/逆时针` | 逆时针旋转 90° |
+| `/左右翻转` | 水平翻转 |
+| `/上下翻转` | 垂直翻转 |
+| `/调速 0.3~5.0` | 调整 GIF 播放速度 |
 
-用户：（引用一条含 GIF 的消息）
-用户：/调速 2.0
-Bot：  [返回 2 倍速的 GIF]
-```
+### 对称处理
 
-### 旋转
+| 指令 | 效果 |
+| --- | --- |
+| `/左对称` | 保留左半边并镜像到右侧 |
+| `/右对称` | 保留右半边并镜像到左侧 |
+| `/上对称` | 保留上半边并镜像到下侧 |
+| `/下对称` | 保留下半边并镜像到上侧 |
 
-```
-用户：（发送一张图片）
-用户：/顺时针
-Bot：  [返回顺时针旋转 90° 后的图片]
+### 本维护版新增效果
 
-用户：/逆时针
-Bot：  [返回逆时针旋转 90° 后的图片]
-```
+| 指令 | 效果 |
+| --- | --- |
+| `/万花筒` | 10 层同心圆错位排列效果 |
+| `/像素化` | 复古像素效果 |
+| `/浮雕` | 浮雕效果并保留透明度 |
+| `/油画` | 色彩增强的油画效果 |
+| `/故障风` | RGB 色差与横向错位效果 |
 
-### @用户取头像
+### 趣味图片
 
-```
-用户：@某人 左对称
-Bot：  [获取该用户头像 → 左对称处理后返回]
-```
+| 指令 | 说明 |
+| --- | --- |
+| `/摸头` | 生成摸头 GIF |
+| `/发射` | 生成人脸定位射击 GIF |
+| `/杀 @用户` | 生成砍头 GIF |
+| `/操你 @用户` | 生成双头像互动 GIF |
+| `/抽你 @用户` | 生成双头像互动 GIF |
 
-### 双人头表情包
+## 图片来源
 
-```
-用户：@某人 操你
-Bot：  [取发送者 + 被 @ 者头像 → 生成撅人 GIF]
+插件按以下顺序获取图片：
 
-用户：@某人 抽你
-Bot：  [取发送者 + 被 @ 者头像 → 生成鞭笞 GIF]
-```
+1. 引用消息中的图片。
+2. 当前消息直接携带的图片。
+3. 被 `@` 用户的 QQ 头像（需开启 `enable_at_avatar`）。
 
----
+支持 HTTP(S)、AstrBot 本地绝对路径和 `file://` URI，单张输入上限为 100 MB。
 
-## 📁 项目结构
+## 配置
 
-```
-astrbot_plugin_pic_toolbox/
-├── main.py              # 插件主体：指令路由与事件处理
-├── metadata.yaml        # 插件元数据
-├── _conf_schema.json    # 配置 Schema
-├── requirements.txt     # Python 依赖
-├── logo.png             # 插件图标
-├── meme/                # 图像处理模块
-│   ├── __init__.py
-│   ├── gif_utils.py     # GIF 帧展开与保存公用函数
-│   ├── invert.py        # 反色处理
-│   ├── flip.py          # 水平 / 垂直翻转
-│   ├── rotate.py        # 顺时针 / 逆时针 90° 旋转
-│   ├── effects.py       # 万花筒 / 像素化 / 浮雕 / 油画 / 故障风
-│   ├── mirror.py        # 左 / 右 / 上 / 下对称
-│   ├── gif_speed.py     # GIF 调速
-│   ├── petpet.py        # 摸头杀生成器
-│   ├── shoot.py         # 射击表情包（含人脸检测）
-│   ├── do.py            # 撅人表情包（双人头）
-│   ├── lash.py          # 鞭笞表情包（双人头）
-│   └── behead.py        # 砍头表情包（单人头）
-└── resource/            # 资源素材
-    ├── petpet_hand.png  # 摸头杀手部精灵图
-    ├── do_frames/       # 撅人底图帧（3 帧）
-    ├── shoot_frames/    # 射击底图帧（13 帧）
-    ├── lash_frames/     # 鞭笞底图帧（9 帧）
-    └── behead_frames/   # 砍头底图帧（21 帧）
+| 配置项 | 默认值 | 说明 |
+| --- | --- | --- |
+| `enable_at_avatar` | `true` | 允许获取被 `@` 用户的头像 |
+| `match_mode` | `false` | 开启后可以省略指令前的 `/` |
+| `gif_speed_allow_frame_drop` | `false` | GIF 超过 50 FPS 时是否允许丢帧 |
+
+## 安装
+
+将仓库目录放入 AstrBot 的插件目录，或下载仓库 ZIP 后通过 AstrBot 管理面板安装，然后重载插件。
+
+依赖：
+
+```text
+Pillow>=10.0.0
+requests>=2.25.0
+numpy>=1.24.0
+opencv-python-headless>=4.8.0
 ```
 
----
+## 验证范围
 
-## 🔄 GIF 处理说明
+当前自动化测试覆盖：
 
-插件使用统一的 `unfold_frames()` 将 GIF 增量帧逐帧复合为完整帧后再处理，避免非首帧局部区域导致的黑块问题。保存时自动继承原 GIF 的：
+- 五种新增效果的静态图片处理。
+- 万花筒 GIF 帧数与循环信息保留。
+- 本地绝对路径输入。
+- `file://` URI 输入。
 
-- `duration`（每帧时长）
-- `disposal`（帧处置方式）
-- `loop`（循环次数）
-- `transparency`（透明索引）
+真实 QQ/NapCat 消息发送效果仍取决于实际 AstrBot 和平台适配器环境。
 
----
+## 第三方说明
 
-## 📝 许可证
+万花筒布局依据 MIT 许可的
+[MemeCrafters/meme-generator-rs](https://github.com/MemeCrafters/meme-generator-rs)
+等价移植，完整声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-[GNU AGPL v3.0 License](LICENSE)
+## 许可证
 
----
-
-## 🙏 鸣谢
-
-- [B1gM8c/Petpet](https://github.com/B1gM8c/Petpet) — 摸头杀原始算法
-- [meme-generator](https://github.com/MeetWq/meme-generator) — 发射 / 撅人 / 鞭笞 / 砍头表情包灵感来源
-- [astrbot-plugin-pic-mirror](https://github.com/FenChen0211/astrbot-plugin-pic-mirror)
-- [AstrBot](https://github.com/AstrBotDevs/AstrBot) — 机器人框架
-- [Pillow (PIL)](https://python-pillow.org/) — 图像处理核心库
-- [OpenCV](https://opencv.org/) — 人脸检测（`发射` 指令）
-
----
-
-<p align="center">Made with ❤️ by <a href="https://github.com/lirundong093-glitch">Lucy</a></p>
+本项目继续遵循 [AGPL-3.0](LICENSE)。
