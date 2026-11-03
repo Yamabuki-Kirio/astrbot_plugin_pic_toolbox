@@ -23,7 +23,8 @@
 - 支持通过 OneBot `get_msg` 下载当前引用消息的真实表情媒体，兼容 SnowLuma/NapCat。
 - 修复 APNG 已合成帧被重复叠加、导致 QQ 表情动画拖影的问题。
 - 修复单独发送 QQ 表情时空指令触发 `IndexError` 的问题。
-- 插件版本更新为 `v1.3.9`。
+- 动画优先复用 meme-generator 的 gifski 高质量编码链，提升清晰度和 QQ 自动播放兼容性。
+- 插件版本更新为 `v1.4.0`。
 
 ## 功能与指令
 
@@ -140,6 +141,7 @@ Pillow>=10.0.0
 requests>=2.25.0
 numpy>=1.24.0
 opencv-python-headless>=4.8.0
+meme_generator==0.2.3
 ```
 
 ## 验证范围
@@ -169,7 +171,7 @@ opencv-python-headless>=4.8.0
 
 ### 引用 GIF 时提示 URL 无协议
 
-请确认已更新到 `v1.3.9` 或更高版本。本维护版已支持 AstrBot 返回的本地绝对路径和 `file://` URI。
+请确认已更新到 `v1.4.0` 或更高版本。本维护版已支持 AstrBot 返回的本地绝对路径和 `file://` URI。
 
 ## 第三方说明
 

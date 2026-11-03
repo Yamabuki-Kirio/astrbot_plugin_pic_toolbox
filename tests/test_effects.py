@@ -1,5 +1,8 @@
 import tempfile
 import unittest
+from unittest.mock import patch
+import sys
+import types
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -7,7 +10,7 @@ from PIL import Image, ImageDraw
 from meme import effects
 from meme.input_source import acquire_image
 from meme.qq_face import make_qq_face_source, qq_face_candidates
-from meme.gif_utils import save_rgba_gif, unfold_frames
+from meme.gif_utils import save_rgba_gif, unfold_frames, _save_with_meme_generator
 from meme.onebot_media import extract_onebot_media_source
 
 
@@ -148,6 +151,27 @@ class EffectsTest(unittest.TestCase):
         self.assertEqual(durations, [41.666666666666664] * 3)
         for expected, actual in zip(direct, unfolded):
             self.assertEqual(expected.tobytes(), actual.tobytes())
+
+    def test_high_quality_encoder_uses_meme_generator_gifski(self):
+        module = types.ModuleType("meme_generator.tools.image_operations")
+        module.gif_merge = lambda images, duration: b"GIF89a-high-quality"
+        packages = {
+            "meme_generator": types.ModuleType("meme_generator"),
+            "meme_generator.tools": types.ModuleType("meme_generator.tools"),
+            "meme_generator.tools.image_operations": module,
+        }
+        output = self.root / "gifski.gif"
+        frames = [Image.open(self.png).convert("RGBA") for _ in range(2)]
+        with patch.dict(sys.modules, packages):
+            used = _save_with_meme_generator(frames, [40.0, 40.0], str(output))
+        self.assertTrue(used)
+        self.assertEqual(output.read_bytes(), b"GIF89a-high-quality")
+
+    def test_high_quality_encoder_preserves_variable_duration_fallback(self):
+        output = self.root / "variable.gif"
+        frames = [Image.open(self.png).convert("RGBA") for _ in range(2)]
+        self.assertFalse(_save_with_meme_generator(frames, [40.0, 120.0], str(output)))
+        self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

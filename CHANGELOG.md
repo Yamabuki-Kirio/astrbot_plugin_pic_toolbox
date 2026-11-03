@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.4.0 (2026-11-03)
+
+- 复用 `meme_generator==0.2.3` 的 gifski RGBA 动画编码链，改善 QQ 表情转换后的色彩、边缘和透明度质量
+- 固定帧率动画优先生成 gifski 标准 GIF，提升 QQ/SnowLuma 识别为自动播放动图的兼容性
+- 帧时长明显不一致或 gifski 不可用时，自动回退到内置 GIF 编码器，保留可用性
+
 ## v1.3.9 (2026-11-03)
 
 - 修复单独发送图片或 QQ 表情时 `message_str` 为空，读取指令首词触发 `IndexError: list index out of range` 的问题

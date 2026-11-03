@@ -1,6 +1,7 @@
 """GIF 通用工具：帧展开与类型判断，供 flip / invert / gif_speed / liquid_gif 共用"""
 
 from PIL import Image, ImageSequence
+from io import BytesIO
 import numpy as np
 import struct
 
@@ -166,6 +167,41 @@ def _write_gif_sub_blocks(f, data: bytes):
     f.write(b"\x00")  # 终止符
 
 
+def _save_with_meme_generator(frames: list, durations: list, output_path: str) -> bool:
+    """优先复用 meme-generator 的 gifski 高质量编码器。
+
+    gifski 使用逐帧 RGBA 量化和时间轴，比单一全局调色板更清晰，
+    输出的 GIF 也更容易被 QQ 识别为可自动播放动图。
+    当依赖不可用或帧时长不一致时，由调用方回退到内置编码器。
+    """
+    if not frames or not durations:
+        return False
+    try:
+        normalized = [float(value) for value in durations]
+    except (TypeError, ValueError, OverflowError):
+        return False
+    if max(normalized) - min(normalized) > 1.0:
+        return False
+
+    try:
+        from meme_generator.tools.image_operations import gif_merge
+
+        png_frames = []
+        for frame in frames:
+            buffer = BytesIO()
+            frame.convert("RGBA").save(buffer, format="PNG", compress_level=1)
+            png_frames.append(buffer.getvalue())
+        duration_seconds = max(0.01, sum(normalized) / len(normalized) / 1000.0)
+        result = gif_merge(png_frames, duration_seconds)
+        if not isinstance(result, (bytes, bytearray)) or not bytes(result).startswith(b"GIF"):
+            return False
+        with open(output_path, "wb") as file:
+            file.write(bytes(result))
+        return True
+    except Exception:
+        return False
+
+
 def save_rgba_gif(frames: list, durations: list, output_path: str,
                   loop: int = 0, disposal: int = 2,
                   source_palette=None, source_trans_idx=None):
@@ -190,6 +226,9 @@ def save_rgba_gif(frames: list, durations: list, output_path: str,
         source_trans_idx: 可选，原 GIF 透明索引
     """
     if not frames:
+        return
+
+    if _save_with_meme_generator(frames, durations, output_path):
         return
 
     # GIF 的 transparency 是单个调色板索引，而 PNG/APNG 在 P 模式下
