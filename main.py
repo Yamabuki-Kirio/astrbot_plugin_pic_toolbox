@@ -65,7 +65,10 @@ class PicToolboxPlugin(Star):
 
         # 解析指令和 @ 目标（参照 pic_mirror 两阶段解析）
         actual_cmd = msg
-        at_qq = self._extract_at_qq(event)
+        # QQ 引用回复常会自动附带 @原发送者。引用中有媒体时，
+        # 必须优先处理被引用的图片/表情，否则会误用原发送者头像。
+        quoted_image_url = self._extract_quoted_image_url(event)
+        at_qq = None if quoted_image_url else self._extract_at_qq(event)
 
         if " @" in msg:
             parts = msg.split("@", 1)
@@ -363,7 +366,7 @@ class PicToolboxPlugin(Star):
         return None
 
     @staticmethod
-    def _extract_image_url(event: AstrMessageEvent) -> str | None:
+    def _extract_quoted_image_url(event: AstrMessageEvent) -> str | None:
         for comp in event.get_messages():
             if isinstance(comp, Comp.Reply):
                 chain = getattr(comp, "chain", None) or []
@@ -376,6 +379,13 @@ class PicToolboxPlugin(Star):
                         source = make_qq_face_source(getattr(rc, "id", None))
                         if source:
                             return source
+        return None
+
+    @staticmethod
+    def _extract_image_url(event: AstrMessageEvent) -> str | None:
+        quoted = PicToolboxPlugin._extract_quoted_image_url(event)
+        if quoted:
+            return quoted
         for comp in event.get_messages():
             if isinstance(comp, Comp.Image):
                 url = getattr(comp, "url", None) or getattr(comp, "file", None)
