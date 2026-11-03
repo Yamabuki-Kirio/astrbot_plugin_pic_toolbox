@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.3.7 (2026-11-03)
+
+- 增加 OneBot 11 `get_msg` 引用媒体回溯，兼容 SnowLuma、NapCat 等 OneBot 实现
+- 引用链未保留媒体时，通过消息 ID 重新读取原始 `image/mface/marketface` 段的 `url/path/file`
+- 输入优先级调整为：引用中真实媒体、OneBot 原始媒体、系统 Face ID 素材，最后才是头像
+
 ## v1.3.6 (2026-11-03)
 
 - 修复 QQNT APNG 的浮点帧时长（如 `41.666... ms`）写入 GIF 时触发 `required argument is not an integer` 的问题

@@ -8,6 +8,7 @@ from meme import effects
 from meme.input_source import acquire_image
 from meme.qq_face import make_qq_face_source, qq_face_candidates
 from meme.gif_utils import save_rgba_gif
+from meme.onebot_media import extract_onebot_media_source
 
 
 class EffectsTest(unittest.TestCase):
@@ -94,6 +95,28 @@ class EffectsTest(unittest.TestCase):
         with Image.open(output) as result:
             self.assertEqual(result.format, "GIF")
             self.assertEqual(result.size, frames[0].size)
+
+    def test_onebot_get_msg_prefers_real_mface_url(self):
+        payload = {
+            "message": [
+                {"type": "face", "data": {"id": "480"}},
+                {
+                    "type": "mface",
+                    "data": {
+                        "file": "marketface",
+                        "url": "https://example.invalid/current.apng",
+                    },
+                },
+            ]
+        }
+        self.assertEqual(
+            extract_onebot_media_source(payload),
+            "https://example.invalid/current.apng",
+        )
+
+    def test_onebot_get_msg_falls_back_to_face_id(self):
+        payload = {"data": {"message": [{"type": "face", "data": {"id": 480}}]}}
+        self.assertEqual(extract_onebot_media_source(payload), "qqface://480")
 
 
 if __name__ == "__main__":

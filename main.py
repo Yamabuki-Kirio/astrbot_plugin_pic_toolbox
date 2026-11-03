@@ -18,6 +18,7 @@ from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 from .meme import gif_speed, invert, flip, petpet, mirror, shoot, do, lash, behead, rotate, effects
 from .meme.input_source import acquire_image
 from .meme.qq_face import make_qq_face_source, qq_face_candidates
+from .meme.onebot_media import extract_onebot_media_source
 
 QQ_AVATAR_URL = "http://q1.qlogo.cn/g?b=qq&nk={qq}&s=640"
 TMP_DIR = Path(get_astrbot_data_path()) / "plugin_data" / "pic_toolbox"
@@ -68,7 +69,6 @@ class PicToolboxPlugin(Star):
         # QQ 引用回复常会自动附带 @原发送者。引用中有媒体时，
         # 必须优先处理被引用的图片/表情，否则会误用原发送者头像。
         quoted_image_url = self._extract_quoted_image_url(event)
-        at_qq = None if quoted_image_url else self._extract_at_qq(event)
 
         if " @" in msg:
             parts = msg.split("@", 1)
@@ -80,6 +80,21 @@ class PicToolboxPlugin(Star):
 
         # 去掉可能的前导 /
         cmd_text = actual_cmd.lstrip("/").strip()
+
+        image_commands = {
+            "万花筒", "像素化", "浮雕", "油画", "故障风", "反色",
+            "左右翻转", "上下翻转", "顺时针", "逆时针", "对称",
+            "左对称", "右对称", "上对称", "下对称", "摸头", "发射", "调速",
+        }
+        if (
+            (not quoted_image_url or quoted_image_url.startswith("qqface://"))
+            and cmd_text.split(maxsplit=1)[0] in image_commands
+        ):
+            onebot_source = await self._extract_onebot_quoted_source(event)
+            if onebot_source:
+                quoted_image_url = onebot_source
+
+        at_qq = None if quoted_image_url else self._extract_at_qq(event)
 
         # ── 艺术特效 ──────────────────────────
         effect_commands = {
@@ -402,6 +417,31 @@ class PicToolboxPlugin(Star):
                 if source:
                     return source
         return None
+
+    @staticmethod
+    async def _extract_onebot_quoted_source(event: AstrMessageEvent) -> str | None:
+        """通过 OneBot get_msg 获取适配层未保留的原始表情媒体字段。"""
+        reply = next(
+            (comp for comp in event.get_messages() if isinstance(comp, Comp.Reply)),
+            None,
+        )
+        message_id = getattr(reply, "id", None) if reply else None
+        bot = getattr(event, "bot", None)
+        if not message_id or bot is None or not hasattr(bot, "call_action"):
+            return None
+        try:
+            try:
+                query_id = int(message_id)
+            except (TypeError, ValueError):
+                query_id = message_id
+            payload = await bot.call_action("get_msg", message_id=query_id)
+            source = extract_onebot_media_source(payload)
+            if source:
+                logger.debug("[pic_toolbox] 已从 OneBot get_msg 提取引用媒体")
+            return source
+        except Exception as exc:
+            logger.warning(f"[pic_toolbox] OneBot get_msg 读取引用媒体失败: {exc}")
+            return None
 
     async def _download_and_process(self, event: AstrMessageEvent,
                                      image_url: str, processor, label: str,
