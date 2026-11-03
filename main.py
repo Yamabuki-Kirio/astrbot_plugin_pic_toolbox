@@ -17,6 +17,7 @@ from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 
 from .meme import gif_speed, invert, flip, petpet, mirror, shoot, do, lash, behead, rotate, effects
 from .meme.input_source import acquire_image
+from .meme.qq_face import make_qq_face_source, qq_face_candidates
 
 QQ_AVATAR_URL = "http://q1.qlogo.cn/g?b=qq&nk={qq}&s=640"
 TMP_DIR = Path(get_astrbot_data_path()) / "plugin_data" / "pic_toolbox"
@@ -25,12 +26,15 @@ os.makedirs(TMP_DIR, exist_ok=True)
 # ── 工具函数 ────────────────────────────────────
 
 def _download_sync(source: str, path: str) -> bool:
-    try:
-        acquire_image(source, path)
-        return True
-    except Exception as e:
-        logger.error(f"[pic_toolbox] 读取图片失败: {e}")
-        return False
+    errors = []
+    for candidate in qq_face_candidates(source):
+        try:
+            acquire_image(candidate, path)
+            return True
+        except Exception as e:
+            errors.append(str(e))
+    logger.error(f"[pic_toolbox] 读取图片失败: {'; '.join(errors)}")
+    return False
 
 def _is_gif(path: str) -> bool:
     try:
@@ -368,11 +372,19 @@ class PicToolboxPlugin(Star):
                         url = getattr(rc, "url", None) or getattr(rc, "file", None)
                         if url:
                             return url
+                    if isinstance(rc, Comp.Face):
+                        source = make_qq_face_source(getattr(rc, "id", None))
+                        if source:
+                            return source
         for comp in event.get_messages():
             if isinstance(comp, Comp.Image):
                 url = getattr(comp, "url", None) or getattr(comp, "file", None)
                 if url:
                     return url
+            if isinstance(comp, Comp.Face):
+                source = make_qq_face_source(getattr(comp, "id", None))
+                if source:
+                    return source
         return None
 
     async def _download_and_process(self, event: AstrMessageEvent,

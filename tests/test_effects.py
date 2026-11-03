@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw
 
 from meme import effects
 from meme.input_source import acquire_image
+from meme.qq_face import make_qq_face_source, qq_face_candidates
 
 
 class EffectsTest(unittest.TestCase):
@@ -60,6 +61,23 @@ class EffectsTest(unittest.TestCase):
         output = self.root / "copied-uri.png"
         acquire_image(self.png.resolve().as_uri(), str(output))
         self.assertEqual(output.read_bytes(), self.png.read_bytes())
+
+    def test_qq_face_source_supports_new_face_ids(self):
+        source = make_qq_face_source(480)
+        self.assertEqual(source, "qqface://480")
+        candidates = qq_face_candidates(source)
+        self.assertEqual(
+            candidates[0],
+            "https://koishi.js.org/QFace/assets/qq_emoji/480/apng/480.png",
+        )
+        self.assertIn(
+            "https://qzonestyle.gtimg.cn/qzone/em/e480.gif",
+            candidates,
+        )
+
+    def test_qq_face_source_rejects_invalid_ids(self):
+        self.assertIsNone(make_qq_face_source("not-a-number"))
+        self.assertEqual(qq_face_candidates("qqface://bad"), [])
 
 
 if __name__ == "__main__":
