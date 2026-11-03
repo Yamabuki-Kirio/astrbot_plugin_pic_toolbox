@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 from meme import effects
 from meme.input_source import acquire_image
 from meme.qq_face import make_qq_face_source, qq_face_candidates
-from meme.gif_utils import save_rgba_gif
+from meme.gif_utils import save_rgba_gif, unfold_frames
 from meme.onebot_media import extract_onebot_media_source
 
 
@@ -117,6 +117,37 @@ class EffectsTest(unittest.TestCase):
     def test_onebot_get_msg_falls_back_to_face_id(self):
         payload = {"data": {"message": [{"type": "face", "data": {"id": 480}}]}}
         self.assertEqual(extract_onebot_media_source(payload), "qqface://480")
+
+    def test_apng_frames_are_not_composited_twice(self):
+        apng = self.root / "transparent-animation.png"
+        frames = []
+        for x in (8, 24, 40):
+            frame = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(frame)
+            draw.ellipse((x, 16, x + 20, 36), fill=(255, 40, 80, 160))
+            frames.append(frame)
+        frames[0].save(
+            apng,
+            save_all=True,
+            append_images=frames[1:],
+            duration=[41.666666666666664] * 3,
+            loop=0,
+            disposal=[1, 1, 1],
+            blend=[0, 0, 0],
+        )
+
+        with Image.open(apng) as source:
+            direct = []
+            for index in range(source.n_frames):
+                source.seek(index)
+                direct.append(source.convert("RGBA").copy())
+        with Image.open(apng) as source:
+            unfolded, durations = unfold_frames(source)
+
+        self.assertEqual(len(unfolded), 3)
+        self.assertEqual(durations, [41.666666666666664] * 3)
+        for expected, actual in zip(direct, unfolded):
+            self.assertEqual(expected.tobytes(), actual.tobytes())
 
 
 if __name__ == "__main__":

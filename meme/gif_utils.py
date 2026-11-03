@@ -43,6 +43,16 @@ def unfold_frames(gif: Image.Image):
     返回 (frames: list[Image], durations: list[int])，其中 frames 内全为独立 RGBA 完整帧。
     """
     frames, durations = [], []
+
+    # Pillow 的 APNG 解码器在 seek/Iterator 时已经根据 blend/disposal
+    # 返回了完整画布帧。若再 alpha_composite 一次，会把上一帧
+    # 叠到当前帧上，导致 QQNT APNG 表情出现明显拖影。
+    if gif.format == "PNG" and getattr(gif, "is_animated", False):
+        for frame in ImageSequence.Iterator(gif):
+            frames.append(frame.convert("RGBA").copy())
+            durations.append(frame.info.get("duration", gif.info.get("duration", 100)))
+        return frames, durations
+
     canvas_size = gif.size
     bg = Image.new("RGBA", canvas_size, _get_background_rgba(gif))
 

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.3.8 (2026-11-03)
+
+- 修复 Pillow 已完成处置的 APNG 帧被再次 `alpha_composite`，导致 QQNT 动态表情拖影的问题
+- APNG 现在直接使用解码器输出的完整 RGBA 帧，GIF 仍保留原有增量帧展开逻辑
+
 ## v1.3.7 (2026-11-03)
 
 - 增加 OneBot 11 `get_msg` 引用媒体回溯，兼容 SnowLuma、NapCat 等 OneBot 实现
