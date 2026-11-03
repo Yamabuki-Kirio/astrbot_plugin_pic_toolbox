@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.3.6 (2026-11-03)
+
+- 修复 QQNT APNG 的浮点帧时长（如 `41.666... ms`）写入 GIF 时触发 `required argument is not an integer` 的问题
+- GIF 保存层统一将帧时长换算为 1/100 秒整数，并对异常时长使用安全默认值
+
 ## v1.3.5 (2026-11-03)
 
 - 修复新版 QQNT APNG 表情带有字节型透明度表时，对称等动画处理写入 GIF 失败的问题

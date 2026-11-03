@@ -86,7 +86,7 @@ class EffectsTest(unittest.TestCase):
         frames = [Image.open(self.png).convert("RGBA")]
         save_rgba_gif(
             frames,
-            [100],
+            [41.666666666666664],
             str(output),
             source_palette=palette,
             source_trans_idx=b"\x00\x15/Je\x7f\x9a\xae\xc1\xd4\xe1\xfc\xfe",

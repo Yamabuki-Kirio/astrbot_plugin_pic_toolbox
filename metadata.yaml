@@ -1,7 +1,7 @@
 name: pic_toolbox
 display_name: 图片处理工具箱
 desc: 图片处理工具集：反色/调速/翻转/对称/旋转/万花筒/像素化/浮雕/油画/故障风，以及多种趣味表情包。支持静态图和 GIF、@用户头像和精准关键词匹配。
-version: v1.3.5
+version: v1.3.6
 author: Lucy / Yamabuki-Kirio
 repo: https://github.com/Yamabuki-Kirio/astrbot_plugin_pic_toolbox
 support_platforms:

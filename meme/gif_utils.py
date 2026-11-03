@@ -261,7 +261,13 @@ def save_rgba_gif(frames: list, durations: list, output_path: str,
         # 逐帧写入
         for i, pframe in enumerate(p_frames):
             dur_ms = durations[i] if i < len(durations) else 100
-            dur_cs = max(1, min(65535, dur_ms // 10))
+            # APNG 帧时长可以是浮点数（例如 41.666... ms），
+            # GIF Graphic Control Extension 只接受整数的 1/100 秒。
+            try:
+                dur_cs = int(round(float(dur_ms) / 10.0))
+            except (TypeError, ValueError, OverflowError):
+                dur_cs = 10
+            dur_cs = max(1, min(65535, dur_cs))
 
             # Graphic Control Extension
             disposal_bits = (disposal & 0x07) << 2
