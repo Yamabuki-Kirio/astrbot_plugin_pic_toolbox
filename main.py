@@ -195,8 +195,14 @@ class PicToolboxPlugin(Star):
             return
 
         # ── 左对称 ───────────────────────────
-        if cmd_text == "左对称":
-            if not self._match_mode and not actual_cmd.startswith("/"):
+        if cmd_text in {"左对称", "对称"}:
+            # 引用媒体时允许直接发「对称」，以便接管同名模板。
+            bare_quoted_alias = cmd_text == "对称" and bool(quoted_image_url)
+            if (
+                not bare_quoted_alias
+                and not self._match_mode
+                and not actual_cmd.startswith("/")
+            ):
                 return
             image_url = None
             if at_qq and self._enable_at_avatar:
@@ -206,7 +212,7 @@ class PicToolboxPlugin(Star):
             if not image_url:
                 return
             event.stop_event()
-            async for r in self._download_and_process(event, image_url, mirror.mirror_left, "左对称"):
+            async for r in self._download_and_process(event, image_url, mirror.mirror_left, "对称"):
                 yield r
             return
 
