@@ -182,6 +182,12 @@ def save_rgba_gif(frames: list, durations: list, output_path: str,
     if not frames:
         return
 
+    # GIF 的 transparency 是单个调色板索引，而 PNG/APNG 在 P 模式下
+    # 可能提供一整段 alpha 表（bytes）。该值不能直接写入 GIF，
+    # 否则 numpy/struct 会将字节串当整数解析并报错。
+    if not isinstance(source_trans_idx, int) or not 0 <= source_trans_idx <= 255:
+        source_trans_idx = None
+
     first_rgba = frames[0].convert("RGBA")
     has_alpha = any(
         (np.array(f.convert("RGBA").split()[-1], dtype=np.uint8) < 128).any()

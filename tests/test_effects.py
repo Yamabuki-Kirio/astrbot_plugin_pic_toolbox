@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 from meme import effects
 from meme.input_source import acquire_image
 from meme.qq_face import make_qq_face_source, qq_face_candidates
+from meme.gif_utils import save_rgba_gif
 
 
 class EffectsTest(unittest.TestCase):
@@ -78,6 +79,21 @@ class EffectsTest(unittest.TestCase):
     def test_qq_face_source_rejects_invalid_ids(self):
         self.assertIsNone(make_qq_face_source("not-a-number"))
         self.assertEqual(qq_face_candidates("qqface://bad"), [])
+
+    def test_gif_writer_ignores_apng_transparency_bytes(self):
+        output = self.root / "apng-transparency.gif"
+        palette = [value for index in range(256) for value in (index, index, index)]
+        frames = [Image.open(self.png).convert("RGBA")]
+        save_rgba_gif(
+            frames,
+            [100],
+            str(output),
+            source_palette=palette,
+            source_trans_idx=b"\x00\x15/Je\x7f\x9a\xae\xc1\xd4\xe1\xfc\xfe",
+        )
+        with Image.open(output) as result:
+            self.assertEqual(result.format, "GIF")
+            self.assertEqual(result.size, frames[0].size)
 
 
 if __name__ == "__main__":
