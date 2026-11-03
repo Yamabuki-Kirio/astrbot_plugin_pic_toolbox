@@ -81,6 +81,11 @@ class PicToolboxPlugin(Star):
         # 去掉可能的前导 /
         cmd_text = actual_cmd.lstrip("/").strip()
 
+        # 单独发送图片或 QQ 表情时 message_str 可能为空。
+        # 没有指令文本就直接忽略，避免后续 split()[0] 越界。
+        if not cmd_text:
+            return
+
         image_commands = {
             "万花筒", "像素化", "浮雕", "油画", "故障风", "反色",
             "左右翻转", "上下翻转", "顺时针", "逆时针", "对称",

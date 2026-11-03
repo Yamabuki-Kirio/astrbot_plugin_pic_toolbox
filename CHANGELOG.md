@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.3.9 (2026-11-03)
+
+- 修复单独发送图片或 QQ 表情时 `message_str` 为空，读取指令首词触发 `IndexError: list index out of range` 的问题
+- 无指令文本的媒体消息现在会安静忽略，不影响其他插件继续处理
+
 ## v1.3.8 (2026-11-03)
 
 - 修复 Pillow 已完成处置的 APNG 帧被再次 `alpha_composite`，导致 QQNT 动态表情拖影的问题
