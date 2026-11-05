@@ -89,7 +89,7 @@ class PicToolboxPlugin(Star):
         image_commands = {
             "万花筒", "像素化", "浮雕", "油画", "故障风", "反色",
             "左右翻转", "上下翻转", "顺时针", "逆时针", "对称",
-            "左对称", "右对称", "上对称", "下对称", "摸头", "发射", "调速",
+            "左对称", "右对称", "上对称", "下对称", "摸头", "发射", "调速", "加速",
         }
         if (
             (not quoted_image_url or quoted_image_url.startswith("qqface://"))
@@ -376,6 +376,37 @@ class PicToolboxPlugin(Star):
                 speed_result["warning"] = warning
             async for r in self._download_and_process(
                 event, image_url, proc, "调速",
+                get_prefix=lambda: speed_result["warning"],
+            ):
+                yield r
+
+        # ── 加速（可不带参数，默认 2 倍）──
+        speedup_match = re.match(r"^加速(?:\s+([\d.]+))?$", actual_cmd)
+        if speedup_match:
+            if not self._match_mode and not actual_cmd.startswith("/"):
+                return
+            image_url = self._extract_image_url(event)
+            if not image_url:
+                return
+            raw_speed = speedup_match.group(1)
+            if raw_speed is None:
+                speed = 2.0
+            else:
+                try:
+                    speed = gif_speed.parse_speed(raw_speed)
+                except ValueError as e:
+                    yield event.plain_result(str(e))
+                    return
+            event.stop_event()
+            allow_drop = self._gif_speed_allow_frame_drop
+            speed_result = {"warning": None}
+            def proc_speedup(inp, out):
+                _, actual_speed, warning = gif_speed.adjust_gif_speed(
+                    inp, out, speed, allow_frame_drop=allow_drop
+                )
+                speed_result["warning"] = warning
+            async for r in self._download_and_process(
+                event, image_url, proc_speedup, "加速",
                 get_prefix=lambda: speed_result["warning"],
             ):
                 yield r
